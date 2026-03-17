@@ -125,16 +125,16 @@ class CoatAdamW(Optimizer):
 
                 # Exponential moving average of gradient values
                 state["exp_avg"] = torch.zeros_like(p, dtype=first_order_dtype, memory_format=torch.preserve_format)
-                state["scale_exp_avg"] = torch.zeros(scale_shape, device=p.device, dtype=p.dtype)
+                state["scale_exp_avg"] = torch.zeros(scale_shape, device=p.device, dtype=torch.float32)
                 if use_expansion:
-                    state["expand_exp_avg"] = torch.ones(scale_shape, device=p.device, dtype=p.dtype)
-                    state["sqrt_minmax_exp_avg"] = torch.ones(scale_shape, device=p.device, dtype=p.dtype)
+                    state["expand_exp_avg"] = torch.ones(scale_shape, device=p.device, dtype=torch.float32)
+                    state["sqrt_minmax_exp_avg"] = torch.ones(scale_shape, device=p.device, dtype=torch.float32)
                 # Exponential moving average of squared gradient values
                 state["exp_avg_sq"] = torch.zeros_like(p, dtype=second_order_dtype, memory_format=torch.preserve_format)
-                state["scale_exp_avg_sq"] = torch.zeros(scale_shape, device=p.device, dtype=p.dtype)
+                state["scale_exp_avg_sq"] = torch.zeros(scale_shape, device=p.device, dtype=torch.float32)
                 if use_expansion:
-                    state["expand_exp_avg_sq"] = torch.ones(scale_shape, device=p.device, dtype=p.dtype)
-                    state["sqrt_minmax_exp_avg_sq"] = torch.ones(scale_shape, device=p.device, dtype=p.dtype)
+                    state["expand_exp_avg_sq"] = torch.ones(scale_shape, device=p.device, dtype=torch.float32)
+                    state["sqrt_minmax_exp_avg_sq"] = torch.ones(scale_shape, device=p.device, dtype=torch.float32)
                 if amsgrad:
                     # Maintains max of all exp. moving avg. of sq. grad. values
                     state["max_exp_avg_sq"] = torch.zeros(p, memory_format=torch.preserve_format)
@@ -452,6 +452,14 @@ def _single_tensor_Coatadamw(
         # a float since most people using JIT are using floats
         assert isinstance(lr, float)
 
+    # CUDA kernels expect C++ float/int scalars; cast here to avoid
+    # "expected scalar type Float but found BFloat16" when lr is a bf16 tensor.
+    lr_f = float(lr)
+    beta1_f = float(beta1)
+    beta2_f = float(beta2)
+    wd_f = float(weight_decay)
+    eps_f = float(eps)
+
     for i, param in enumerate(params):
         grad = grads[i]
         # First order
@@ -487,11 +495,11 @@ def _single_tensor_Coatadamw(
                 scale_exp_avg_sq,
                 expand_exp_avg_sq,
                 sqrt_minmax_exp_avg_sq,
-                beta1,
-                beta2,
-                lr,
-                weight_decay,
-                eps,
+                beta1_f,
+                beta2_f,
+                lr_f,
+                wd_f,
+                eps_f,
                 step,
                 qgroup_size,
                 expand_min,
@@ -505,11 +513,11 @@ def _single_tensor_Coatadamw(
                 scale_exp_avg,
                 exp_avg_sq,
                 scale_exp_avg_sq,
-                beta1,
-                beta2,
-                lr,
-                weight_decay,
-                eps,
+                beta1_f,
+                beta2_f,
+                lr_f,
+                wd_f,
+                eps_f,
                 step,
                 qgroup_size,
             )

@@ -27,6 +27,10 @@ setup(
                 "fp8_adamw_cuda_kernel.cu",
                 "fp8_adamw_expand_cuda.cpp",
                 "fp8_adamw_expand_cuda_kernel.cu",
+                "fp8_muon_cuda.cpp",
+                "fp8_muon_cuda_kernel.cu",
+                "fp8_muon_expand_cuda.cpp",
+                "fp8_muon_expand_cuda_kernel.cu",
                 "bindings.cpp",
             ],
             # include_dirs=[
